@@ -13,7 +13,6 @@ const mathProxy = new MathCompilerProxy();
 const invoker = new CommandInvoker();
 const renderer = new CanvasStrategy();
 
-// Палітри кольорів ( Strategy )
 const lightPalette = ['#2563eb', '#dc2626', '#16a34a', '#ca8a04', '#9333ea', '#0891b2'];
 const darkPalette = ['#60a5fa', '#f87171', '#4ade80', '#fbbf24', '#c084fc', '#22d3ee'];
 
@@ -36,22 +35,18 @@ export default function App() {
       return;
     }
 
-    // ВИПРАВЛЕННЯ КОЛЬОРУ: беремо колір відповідно до кількості графіків
     const palette = theme === 'light' ? lightPalette : darkPalette;
     const graphColor = palette[graphs.length % palette.length];
 
-    // Створення через Builder
     const newGraph = new GraphConfigBuilder(input)
       .setColor(graphColor)
       .setThickness(2)
       .build();
     
-    // ВАЖЛИВО: додаємо унікальний ID для видалення
     const graphWithId = { ...newGraph, id: Date.now() };
 
     const newList = [...graphs, graphWithId];
     
-    // Використання Command патерна
     const command = new AddGraphCommand(graphs, graphWithId);
     invoker.executeCommand(command);
     
@@ -60,7 +55,6 @@ export default function App() {
     toast.success('Графік додано!');
   };
 
-  // ВИПРАВЛЕННЯ ВИДАЛЕННЯ: фільтруємо за ID
   const handleDeleteGraph = (id) => {
     setGraphs(prev => prev.filter(g => g.id !== id));
     toast.success('Видалено');
@@ -69,7 +63,6 @@ export default function App() {
   const handleUndo = () => {
     if (invoker.history.length === 0) return toast.error('Нічого повертати');
     invoker.undoLast();
-    // Отримуємо останній стан списку з історії команд
     const lastCommand = invoker.history[invoker.history.length - 1];
     setGraphs(lastCommand ? lastCommand.graphList : []);
     toast('Дію скасовано');
@@ -108,7 +101,6 @@ export default function App() {
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // Сітка
     ctx.strokeStyle = theme === 'light' ? '#e2e8f0' : '#334155';
     ctx.lineWidth = 1;
     ctx.beginPath();
@@ -118,7 +110,6 @@ export default function App() {
     for (let y = centerY; y >= 0; y -= step) { ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); }
     ctx.stroke();
 
-    // Осі
     ctx.strokeStyle = theme === 'light' ? '#94a3b8' : '#64748b';
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -126,7 +117,6 @@ export default function App() {
     ctx.moveTo(centerX, 0); ctx.lineTo(centerX, canvas.height);
     ctx.stroke();
 
-    // Малювання всіх графіків (кожен своїм кольором)
     graphs.forEach(g => {
       const points = [];
       for (let x = -(centerX / step); x <= (centerX / step); x += 0.05) {
