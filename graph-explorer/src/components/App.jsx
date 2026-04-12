@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
 import { Activity, Undo2, Plus, Moon, Sun, LineChart, Trash2, MousePointer2 } from 'lucide-react';
-
+import { MathAdapter } from '../core/math/MathAdapter';
+import { CanvasStrategy } from '../core/rendering/RenderStrategy';
+import { MathCompilerProxy } from '../core/math/MathCompilerProxy';
 import { settingsInstance } from '../core/config/SingletonSettings';
 import { GraphConfigBuilder } from '../core/entities/GraphBuilder';
 import { CommandInvoker, AddGraphCommand } from '../core/workspace/CommandHistory';
