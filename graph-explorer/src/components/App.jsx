@@ -7,6 +7,7 @@ import { MathCompilerProxy } from '../core/math/MathCompilerProxy';
 import { settingsInstance } from '../core/config/SingletonSettings';
 import { GraphConfigBuilder } from '../core/entities/GraphBuilder';
 import { CommandInvoker, AddGraphCommand } from '../core/workspace/CommandHistory';
+import { runFullBenchmark } from '../benchmark.js';
 
 const mathProxy = new MathCompilerProxy();
 const invoker = new CommandInvoker();
@@ -21,6 +22,9 @@ export default function App() {
   const [theme, setTheme] = useState(settingsInstance.theme || 'light');
   const [hoverData, setHoverData] = useState(null);
   const canvasRef = useRef(null);
+
+  const [benchmarkLogs, setBenchmarkLogs] = useState([]);
+  const [isBenchmarking, setIsBenchmarking] = useState(false);
 
   const toggleTheme = () => {
     settingsInstance.toggleTheme();
@@ -234,6 +238,51 @@ export default function App() {
                 Наведіть на графік, щоб побачити координати. 
               </p>
             </div>
+
+            <div style={{ padding: '20px', borderRadius: '24px', background: 'rgba(59,130,246,0.05)', border: '1px solid rgba(59,130,246,0.1)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#3b82f6', marginBottom: '10px' }}>
+                <Activity size={16} /> <span style={{ fontWeight: 700, fontSize: '14px' }}>Benchmarking (Потоки)</span>
+              </div>
+              
+              <button 
+                disabled={isBenchmarking}
+                onClick={async () => {
+                  setBenchmarkLogs([]); 
+                  setIsBenchmarking(true);
+                  toast('Бенчмарк запущено...');
+                  
+                  await runFullBenchmark((message) => {
+                    setBenchmarkLogs(prev => [...prev, message]);
+                  });
+                  
+                  setIsBenchmarking(false);
+                  toast.success('Бенчмарк завершено!');
+                }} 
+                style={{ 
+                  width: '100%', padding: '10px', borderRadius: '10px', 
+                  background: isBenchmarking ? '#94a3b8' : '#3b82f6', 
+                  color: '#fff', border: 'none', cursor: isBenchmarking ? 'wait' : 'pointer', 
+                  fontWeight: 'bold', marginBottom: '15px' 
+                }}>
+                {isBenchmarking ? '⏳ Обчислення...' : '🚀 Запустити тест'}
+              </button>
+
+              <div style={{ 
+                background: '#0f172a', color: '#10b981', padding: '12px', 
+                borderRadius: '12px', fontSize: '12px', fontFamily: 'monospace', 
+                minHeight: '100px', maxHeight: '250px', overflowY: 'auto',
+                boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.5)'
+              }}>
+                {benchmarkLogs.length === 0 ? (
+                  <span style={{ color: '#64748b' }}>// Результати з'являться тут...</span>
+                ) : (
+                  benchmarkLogs.map((log, index) => (
+                    <div key={index} style={{ marginBottom: '4px' }}>{log}</div>
+                  ))
+                )}
+              </div>
+            </div>
+            
           </aside>
         </main>
       </div>
