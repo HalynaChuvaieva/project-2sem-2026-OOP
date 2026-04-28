@@ -19,7 +19,7 @@ describe('CommandHistory', () => {
     history.push(new WorkspaceMemento([{ id: 1 }]));
     history.push(new WorkspaceMemento([{ id: 1 }, { id: 2 }]));
     
-    const undone = history.undo();]
+    const undone = history.undo();
     expect(undone.getState()).toEqual([{ id: 1 }]);
   });
 

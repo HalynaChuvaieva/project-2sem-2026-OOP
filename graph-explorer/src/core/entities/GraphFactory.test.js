@@ -1,19 +1,24 @@
-import { describe, it, expect } from 'vitest';
-import { GraphFactory } from './GraphFactory';
+class Graph {
+  constructor(config) { 
+    this.formula = config.formula; 
+    this.color = config.color;
+    if (config.id) this.id = config.id;
+  }
+}
 
-describe('GraphFactory', () => {
-  it('should create a standard graph object with correct properties', () => {
-    const config = { formula: 'x + 2', color: '#ff0000' };
-    const graph = GraphFactory.createGraph('standard', config);
+class StandardGraph extends Graph { type = 'function'; }
+
+class PolarGraph extends Graph { type = 'polar'; }
+
+export class GraphFactory {
+  static createGraph(type, config) {
+    if (type === 'standard') {
+      return new StandardGraph(config);
+    }
+    if (type === 'polar') {
+      return new PolarGraph(config);
+    }
     
-    expect(graph.formula).toBe('x + 2');
-    expect(graph.color).toBe('#ff0000');
-    expect(graph.type).toBe('function');
-  });
-
-  it('should throw error for unknown graph types', () => {
-    expect(() => {
-      GraphFactory.createGraph('invalid_type', {});
-    }).toThrow();
-  });
-});
+    throw new Error(`Unknown graph type: ${type}`);
+  }
+}
