@@ -1,34 +1,34 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { CommandHistory } from './CommandHistory';
-import { WorkspaceMemento } from './WorkspaceMemento';
+import { describe, it, expect } from 'vitest';
+import { CommandInvoker, AddGraphCommand } from './CommandHistory';
 
-describe('CommandHistory', () => {
-  let history;
-
-  beforeEach(() => {
-    history = new CommandHistory();
-  });
-
-  it('should store mementos correctly', () => {
-    const memento = new WorkspaceMemento([{ id: 1 }]);
-    history.push(memento);
-    expect(history.undoStack.length).toBe(1);
-  });
-
-  it('should undo to the previous state', () => {
-    history.push(new WorkspaceMemento([{ id: 1 }]));
-    history.push(new WorkspaceMemento([{ id: 1 }, { id: 2 }]));
+describe('Command Pattern: CommandInvoker та AddGraphCommand', () => {
+  it('Має додавати графік до списку та в історію', () => {
+    const invoker = new CommandInvoker();
+    const graphs = [];
+    const newGraph = { formula: 'x^2', color: 'red' };
     
-    const undone = history.undo();
-    expect(undone.getState()).toEqual([{ id: 1 }]);
+    const command = new AddGraphCommand(graphs, newGraph);
+    invoker.executeCommand(command);
+    
+    expect(graphs.length).toBe(1);
+    expect(graphs[0].formula).toBe('x^2');
+    expect(invoker.history.length).toBe(1);
   });
 
-  it('should handle redo operations', () => {
-    history.push(new WorkspaceMemento([{ id: 1 }]));
-    history.push(new WorkspaceMemento([{ id: 1 }, { id: 2 }]));
+  it('Має правильно скасовувати останню дію (Undo)', () => {
+    const invoker = new CommandInvoker();
+    const graphs = [];
+    const command = new AddGraphCommand(graphs, { formula: 'sin(x)' });
     
-    history.undo();
-    const redone = history.redo();
-    expect(redone.getState()).toEqual([{ id: 1 }, { id: 2 }]);
+    invoker.executeCommand(command);
+    invoker.undoLast(); 
+    
+    expect(graphs.length).toBe(0); 
+    expect(invoker.history.length).toBe(0); 
+  });
+
+  it('Не повинен ламатися при спробі скасувати, коли історія порожня', () => {
+    const invoker = new CommandInvoker();
+    expect(() => invoker.undoLast()).not.toThrow();
   });
 });

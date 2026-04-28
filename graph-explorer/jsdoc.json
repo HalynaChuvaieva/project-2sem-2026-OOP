@@ -1,0 +1,12 @@
+{
+  "source": {
+    "include": ["src/core"],
+    "includePattern": ".js$",
+    "excludePattern": "(node_modules/|tests|\\.test\\.js$)"
+  },
+  "opts": {
+    "destination": "./docs",
+    "recurse": true,
+    "readme": "README.md"
+  }
+}

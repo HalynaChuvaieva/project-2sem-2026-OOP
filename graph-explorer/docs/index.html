@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Home</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Home</h1>
+
+    
+
+
+
+    
+
+
+    <h3> </h3>
+
+
+
+
+
+
+
+
+
+
+    
+
+
+
+
+    <section>
+        <article><h1>GraphExplorer</h1>
+<p>Сучасний інтерактивний інструмент для візуалізації математичних функцій, побудований на архітектурних принципах <strong>SOLID</strong> та <strong>GoF Design Patterns</strong>.</p>
+<h2>Архітектура та патерни (Design Patterns)</h2>
+<p>Проєкт демонструє практичне застосування 11 патернів проєктування для створення гнучкої та масштабованої системи.</p>
+<h2>🟢 1. Породжувальні патерни (Creational Patterns)</h2>
+<h3>1.1. Патерн Singleton</h3>
+<ul>
+<li><strong>Де використано:</strong> Файл <code>src/core/creational/SingletonSettings.js</code> (клас <code>AppSettings</code>).</li>
+<li><strong>Яку проблему вирішує:</strong> Застосунку потрібна єдина точка доступу до глобальних налаштувань (наприклад, активна тема &quot;light&quot; або &quot;dark&quot;). Створення кількох екземплярів класу налаштувань призвело б до розсинхронізації стану між різними компонентами.</li>
+<li><strong>Переваги:</strong> Гарантує, що в пам'яті існує лише один об'єкт налаштувань. Надає зручний глобальний доступ без передачі <code>props</code>.</li>
+<li><strong>Недоліки:</strong> Порушує принцип єдиної відповідальності (клас сам контролює своє створення). Може ускладнити Unit-тестування.</li>
+</ul>
+<h3>1.2. Патерн Factory Method</h3>
+<ul>
+<li><strong>Де використано:</strong> Файл <code>src/core/creational/GraphFactory.js</code> (клас <code>GraphFactory</code>).</li>
+<li><strong>Яку проблему вирішує:</strong> У майбутньому застосунок підтримуватиме різні типи графіків (декартові <code>CartesianGraph</code>, полярні <code>PolarGraph</code> тощо). Фабричний метод інкапсулює логіку вибору та створення конкретного класу графіка на основі вхідних даних, розвантажуючи UI-компоненти.</li>
+<li><strong>Переваги:</strong> Відокремлює код створення об'єктів від коду їх використання. Спрощує додавання нових типів графіків (дотримання Open/Closed Principle).</li>
+<li><strong>Недоліки:</strong> Може призвести до створення великої кількості підкласів для кожного нового типу продукту.</li>
+</ul>
+<h3>1.3. Патерн Builder</h3>
+<ul>
+<li><strong>Де використано:</strong> Файл <code>src/core/creational/GraphBuilder.js</code> (клас <code>GraphConfigBuilder</code>). В <code>App.jsx</code> викликається при додаванні графіка.</li>
+<li><strong>Яку проблему вирішує:</strong> Об'єкт графіка має складну конфігурацію (формула, колір, товщина лінії, ідентифікатор). Передача всіх параметрів через &quot;телескопічний конструктор&quot; є незручною та схильною до помилок.</li>
+<li><strong>Переваги:</strong> Дозволяє створювати складний об'єкт покроково (<code>.setColor().setThickness().build()</code>). Робить код конфігурації читабельним.</li>
+<li><strong>Недоліки:</strong> Потребує написання окремого класу-будівельника, що збільшує загальний обсяг коду.</li>
+</ul>
+<hr>
+<h2>🔵 2. Структурні патерни (Structural Patterns)</h2>
+<h3>2.1. Патерн Adapter</h3>
+<ul>
+<li><strong>Де використано:</strong> Файл <code>src/core/structural/MathAdapter.js</code> (клас <code>MathAdapter</code>).</li>
+<li><strong>Яку проблему вирішує:</strong> Зовнішня бібліотека <code>math.js</code> має свій специфічний API. Адаптер діє як &quot;обгортка&quot;, що надає системі уніфікований інтерфейс для обчислень та валідації синтаксису, приховуючи складність зовнішнього пакету.</li>
+<li><strong>Переваги:</strong> Захищає ядро застосунку від змін у зовнішній бібліотеці. Дозволяє легко замінити математичний рушій у майбутньому без переписування всього застосунку.</li>
+<li><strong>Недоліки:</strong> Додає додатковий рівень абстракції, що незначно ускладнює загальну архітектуру.</li>
+</ul>
+<h3>2.2. Патерн Proxy</h3>
+<ul>
+<li><strong>Де використано:</strong> Файл <code>src/core/structural/MathCompilerProxy.js</code> (клас <code>MathCompilerProxy</code>).</li>
+<li><strong>Яку проблему вирішує:</strong> Парсинг та обчислення точок функцій — ресурсомістка операція. Проксі-об'єкт перевіряє, чи обчислювалась уже певна точка для заданої формули. Якщо так — повертає готовий результат із кешу пам'яті.</li>
+<li><strong>Переваги:</strong> Суттєво підвищує продуктивність та FPS при частому перемальовуванні графіка (наприклад, під час ресайзу або зміни теми).</li>
+<li><strong>Недоліки:</strong> Потребує контролю за пам'яттю (можливі витоки пам'яті, якщо кеш необмежено розростатиметься).</li>
+</ul>
+<h3>2.3. Патерн Composite</h3>
+<ul>
+<li><strong>Де використано:</strong> Файл <code>src/core/structural/GraphComposite.js</code> (класи <code>SingleGraph</code>, <code>GraphGroup</code>).</li>
+<li><strong>Яку проблему вирішує:</strong> Необхідність групувати графіки (наприклад, у &quot;Папки&quot;) та застосовувати дії до всієї групи одночасно (наприклад, приховати всі графіки в групі).</li>
+<li><strong>Переваги:</strong> Дозволяє клієнтському коду однаково працювати як з окремим графіком, так і з їхньою групою через єдиний інтерфейс (метод <code>setVisibility</code>).</li>
+<li><strong>Недоліки:</strong> Може зробити архітектуру занадто загальною. Іноді важко обмежити типи компонентів, які можуть бути додані до композиції.</li>
+</ul>
+<hr>
+<h2>🔴 3. Поведінкові патерни (Behavioral Patterns)</h2>
+<h3>3.1. Патерн Strategy</h3>
+<ul>
+<li><strong>Де використано:</strong> Файли <code>RenderStrategy.js</code> (стратегії малювання) та логіка <code>getColorForGraph</code> в <code>App.jsx</code>.</li>
+<li><strong>Яку проблему вирішує:</strong> Замість масивних блоків <code>if/else</code> для вибору способу малювання (Canvas чи SVG) або підбору палітри (Світла чи Темна), алгоритми виносяться в окремі взаємозамінні класи/функції.</li>
+<li><strong>Переваги:</strong> Ідеальне дотримання Open/Closed Principle. Логіка вибору алгоритму інкапсульована і легко розширюється.</li>
+<li><strong>Недоліки:</strong> Клієнтський код повинен знати про різницю між стратегіями, щоб передати правильний контекст.</li>
+</ul>
+<h3>3.2. Патерн Template Method (Шаблонний метод)</h3>
+<ul>
+<li><strong>Де використано:</strong> Файл <code>src/core/behavioral/BaseRendererTemplate.js</code> (клас <code>BaseRenderer</code>).</li>
+<li><strong>Яку проблему вирішує:</strong> Алгоритм малювання координатної площини завжди має стабільну послідовність кроків: 1. Очистити екран $\rightarrow$ 2. Намалювати сітку $\rightarrow$ 3. Намалювати осі $\rightarrow$ 4. Намалювати криві. Шаблонний метод фіксує цей скелет, дозволяючи підкласам (наприклад, <code>CanvasStrategy</code>) перевизначити лише крок рендерингу самих кривих.</li>
+<li><strong>Переваги:</strong> Усуває дублювання коду (DRY). Гарантує правильний порядок виклику методів рендерингу.</li>
+<li><strong>Недоліки:</strong> Підкласи жорстко обмежені заданим скелетом алгоритму.</li>
+</ul>
+<h3>3.3. Патерн Command</h3>
+<ul>
+<li><strong>Де використано:</strong> Файл <code>src/core/behavioral/CommandHistory.js</code> (класи <code>AddGraphCommand</code>, <code>CommandInvoker</code>).</li>
+<li><strong>Яку проблему вирішує:</strong> Для реалізації системи скасування дій (Undo). Кожне додавання графіка інкапсулюється в об'єкт-команду, яка знає, як виконати дію (<code>execute()</code>) і як її скасувати (<code>undo()</code>).</li>
+<li><strong>Переваги:</strong> Дозволяє легко реалізувати історію операцій, черги завдань та відкладене виконання.</li>
+<li><strong>Недоліки:</strong> Збільшує кількість класів у проєкті.</li>
+</ul>
+<h3>3.4. Патерн Memento</h3>
+<ul>
+<li><strong>Де використано:</strong> Файл <code>src/core/behavioral/WorkspaceMemento.js</code> (а також інтегровано в логіку збереження стану для Command).</li>
+<li><strong>Яку проблему вирішує:</strong> Дозволяє зберегти внутрішній стан робочого простору (всі введені формули та налаштування на певний момент часу) без порушення інкапсуляції, щоб мати змогу відновити його пізніше.</li>
+<li><strong>Переваги:</strong> Надійно ізолює деталі реалізації стану об'єкта від інших класів.</li>
+<li><strong>Недоліки:</strong> Створення частих знімків великого масиву даних (наприклад, при кожному русі миші) може споживати багато оперативної пам'яті.</li>
+</ul>
+<h3>3.5. Патерн Observer</h3>
+<ul>
+<li><strong>Де використано:</strong> Файл <code>src/core/behavioral/GraphObserver.js</code> (а також реалізовано через <code>onMouseMove</code> та систему реактивних станів <code>useState</code> у React).</li>
+<li><strong>Яку проблему вирішує:</strong> Необхідно забезпечити миттєву реакцію інтерфейсу (відображення Tooltip з координатами) на рух курсору по полотну.</li>
+<li><strong>Переваги:</strong> Забезпечує слабке зв'язування між джерелом подій (Canvas) та слухачами (інформаційними панелями). Панелі оновлюються автоматично при зміні стану.</li>
+<li><strong>Недоліки:</strong> В разі великої кількості спостерігачів (або складних обчислень при русі миші без Debounce) можливе зниження продуктивності інтерфейсу.</li>
+</ul>
+<hr>
+<h2>Основні можливості</h2>
+<ul>
+<li><strong>Динамічний рендеринг</strong>: Побудова графіків будь-якої складності за допомогою <code>math.js</code>.</li>
+<li><strong>Багатоколірність</strong>: Кожен новий графік автоматично отримує унікальний колір із палітри.</li>
+<li><strong>Інтерактивність</strong>: Наведення курсора на графік відображає точні координати $(x, y)$.</li>
+<li><strong>Валідація</strong>: Система <code>hot-toast</code> сповіщень про помилки в синтаксисі формул.</li>
+<li><strong>Glassmorphism UI</strong></li>
+</ul>
+<h2>Тестування (Unit Tests)</h2>
+<p>У проєкті налаштовано автоматизоване модульне тестування за допомогою фреймворку <strong>Vitest</strong>. Тести зосереджені на перевірці ключових архітектурних патернів (Creational, Structural, Behavioral) та стабільності бізнес-логіки.</p>
+<h3>1. <code>CommandHistory.test.js</code></h3>
+<p>Перевіряє логіку управління станом робочої області, а саме функції скасування (Undo) та повторення (Redo) дій:</p>
+<ul>
+<li><strong>Збереження стану:</strong> Перевіряє, чи правильно додається новий &quot;знімок&quot; (memento) поточного масиву графіків до стеку історії.</li>
+<li><strong>Крок назад (Undo):</strong> Симулює додавання кількох станів і перевіряє, чи метод <code>undo()</code> дійсно повертає систему до попереднього кроку.</li>
+<li><strong>Крок вперед (Redo):</strong> Відтворює ланцюжок дій (збереження $\rightarrow$ скасування $\rightarrow$ повторення) та перевіряє, чи успішно відновлюється стан, який щойно був скасований.</li>
+</ul>
+<h3>2. <code>MathCompilerProxy.test.js</code></h3>
+<p>Перевіряє оптимізацію продуктивності додатку (кешування результатів для зменшення навантаження при рендерингу тисяч точок кадру):</p>
+<ul>
+<li><strong>Точність обчислень:</strong> Базова перевірка здатності проксі-об'єкта повертати правильний математичний результат.</li>
+<li><strong>Логіка кешування:</strong> Використовує механізм шпигунів (<code>vi.spyOn</code>), щоб гарантувати, що при повторному запиті однакової формули та значення <code>X</code>, реальне обчислення відбувається <strong>лише один раз</strong>, а наступні дані миттєво повертаються з кешу.</li>
+</ul>
+<h3>3. <code>GraphFactory.test.js</code></h3>
+<p>Перевіряє фабрику, яка відповідає за централізоване створення нових сутностей у системі:</p>
+<ul>
+<li><strong>Правильність конструювання:</strong> Гарантує, що фабрика створює і повертає об'єкт із точно тими ж параметрами (колір, формула, тип), які були передані при виклику.</li>
+<li><strong>Захист від збоїв:</strong> Перевіряє, чи система передбачувано реагує (викидає помилку), якщо у фабрику надходить запит на створення невідомого або неіснуючого типу графіка.</li>
+</ul>
+<h3>4. <code>MathAdapter.test.js</code></h3>
+<p>Тестує обгортку навколо зовнішньої бібліотеки <code>math.js</code>, щоб гарантувати стабільність математичного ядра:</p>
+<ul>
+<li><strong>Базова математика:</strong> Перевіряє правильність підстановки значення <code>X</code> у рядок з формулою.</li>
+<li><strong>Критичні значення:</strong> Перевіряє поведінку адаптера при специфічних математичних операціях (наприклад, ділення на нуль коректно повертає <code>Infinity</code> або <code>NaN</code>, не ламаючи виконання коду).</li>
+<li><strong>Валідація вводу:</strong> Перевіряє, чи метод <code>validate</code> успішно підтверджує правильні формули, та чи коректно перехоплює синтаксичні помилки (наприклад, незакриті дужки), повертаючи текст помилки для відображення в UI.</li>
+</ul>
+<h2>Аналіз продуктивності (Benchmarking)</h2>
+<p>Було проведено порівняння однопоточного (<code>SequentialEngine</code>) та мультипоточного (<code>ParallelEngine</code> на базі Web Workers) алгоритмів обчислення точок графіка.</p>
+<ul>
+<li><strong>Тестова формула:</strong> <code>y = sin(x) * cos(x) + x^2 - log(abs(x)+1)</code></li>
+<li><strong>Обсяг даних:</strong> 2 000 000 точок.</li>
+<li><strong>Середовище:</strong> 4 потоки (<code>navigator.hardwareConcurrency</code>).</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">Версія алгоритму</th>
+<th style="text-align:left">Час виконання (мс)</th>
+<th style="text-align:left">Кількість точок</th>
+<th style="text-align:left">Прискорення</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><strong>Послідовна (1 потік)</strong></td>
+<td style="text-align:left">1245.30 мс</td>
+<td style="text-align:left">2 000 000</td>
+<td style="text-align:left">1.0x</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>Паралельна (4 потоки)</strong></td>
+<td style="text-align:left">385.12 мс</td>
+<td style="text-align:left">2 000 000</td>
+<td style="text-align:left"><strong>~3.2x</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Висновок:</strong> Використання патерну Strategy та ізоляція обчислень у Web Workers дозволила пришвидшити важкі розрахунки у понад 3 рази, не блокуючи при цьому головний потік UI (Main Thread).</p></article>
+    </section>
+
+
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="ParallelEngine.html">ParallelEngine</a></li><li><a href="ParallelEngine_ParallelEngine.html">ParallelEngine</a></li><li><a href="SequentialEngine.html">SequentialEngine</a></li></ul><h3>Interfaces</h3><ul><li><a href="IMathEngine.html">IMathEngine</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Tue Apr 28 2026 22:32:19 GMT+0300 (за східноєвропейським літнім часом)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
