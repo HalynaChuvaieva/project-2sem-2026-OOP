@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
 import { Activity, Undo2, Plus, Moon, Sun, LineChart, Trash2, MousePointer2 } from 'lucide-react';
-import { MathAdapter } from '../core/math/MathAdapter';
-import { CanvasStrategy } from '../core/rendering/RenderStrategy';
-import { MathCompilerProxy } from '../core/math/MathCompilerProxy';
+
 import { settingsInstance } from '../core/config/SingletonSettings';
 import { GraphConfigBuilder } from '../core/entities/GraphBuilder';
+import { MathCompilerProxy } from '../core/math/MathCompilerProxy';
+import { CanvasStrategy } from '../core/rendering/RenderStrategy';
 import { CommandInvoker, AddGraphCommand } from '../core/workspace/CommandHistory';
-import { runFullBenchmark } from '../benchmark.js';
+import { MathAdapter } from '../core/math/MathAdapter';
+import { runConfigurableBenchmark } from '../benchmark.js';
 
 const mathProxy = new MathCompilerProxy();
 const invoker = new CommandInvoker();
@@ -25,6 +26,15 @@ export default function App() {
 
   const [benchmarkLogs, setBenchmarkLogs] = useState([]);
   const [isBenchmarking, setIsBenchmarking] = useState(false);
+  const [benchConfig, setBenchConfig] = useState({
+    taskType: 'minmax',
+    formula: 'sin(x)',
+    formula2: 'cos(x)',
+    startX: -100,
+    endX: 100,
+    step: 0.001,
+    threads: 4
+  });
 
   const toggleTheme = () => {
     settingsInstance.toggleTheme();
@@ -37,22 +47,13 @@ export default function App() {
       toast.error(`Помилка: ${validation.message}`);
       return;
     }
-
     const palette = theme === 'light' ? lightPalette : darkPalette;
     const graphColor = palette[graphs.length % palette.length];
-
-    const newGraph = new GraphConfigBuilder(input)
-      .setColor(graphColor)
-      .setThickness(2)
-      .build();
-    
+    const newGraph = new GraphConfigBuilder(input).setColor(graphColor).setThickness(2).build();
     const graphWithId = { ...newGraph, id: Date.now() };
 
     const newList = [...graphs, graphWithId];
-    
-    const command = new AddGraphCommand(graphs, graphWithId);
-    invoker.executeCommand(command);
-    
+    invoker.executeCommand(new AddGraphCommand(graphs, graphWithId));
     setGraphs(newList);
     setInput('');
     toast.success('Графік додано!');
@@ -68,7 +69,6 @@ export default function App() {
     invoker.undoLast();
     const lastCommand = invoker.history[invoker.history.length - 1];
     setGraphs(lastCommand ? lastCommand.graphList : []);
-    toast('Дію скасовано');
   };
 
   const handleMouseMove = (e) => {
@@ -103,7 +103,6 @@ export default function App() {
     const step = 40;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
     ctx.strokeStyle = theme === 'light' ? '#e2e8f0' : '#334155';
     ctx.lineWidth = 1;
     ctx.beginPath();
@@ -134,52 +133,28 @@ export default function App() {
   }, [graphs, theme]);
 
   return (
-    <div style={{ 
-      minHeight: '100vh', backgroundColor: theme === 'light' ? '#f8fafc' : '#0a0f1d',
-      color: theme === 'light' ? '#1e293b' : '#f1f5f9', transition: 'all 0.3s ease', padding: '40px'
-    }}>
+    <div style={{ minHeight: '100vh', backgroundColor: theme === 'light' ? '#f8fafc' : '#0a0f1d', color: theme === 'light' ? '#1e293b' : '#f1f5f9', transition: 'all 0.3s ease', padding: '40px' }}>
       <Toaster position="top-right" />
-      
       <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
         <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-            <div style={{ background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)', padding: '10px', borderRadius: '12px' }}>
-              <LineChart color="white" size={24} />
-            </div>
+            <div style={{ background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)', padding: '10px', borderRadius: '12px' }}><LineChart color="white" size={24} /></div>
             <h1 style={{ margin: 0, fontSize: '22px', fontWeight: 800 }}>GraphExplorer PRO</h1>
           </div>
-          
-          <button onClick={toggleTheme} style={{ 
-            background: theme === 'light' ? '#fff' : '#1e293b', 
-            border: '1px solid #cbd5e1', width: '45px', height: '45px', borderRadius: '50%', cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center'
-          }}>
+          <button onClick={toggleTheme} style={{ background: theme === 'light' ? '#fff' : '#1e293b', border: '1px solid #cbd5e1', width: '45px', height: '45px', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             {theme === 'light' ? <Moon size={20} color="#1e293b" /> : <Sun size={20} color="#fbbf24" />}
           </button>
         </header>
 
         <main style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '30px' }}>
-          <section style={{ 
-            background: theme === 'light' ? '#ffffff' : 'rgba(30,41,59,0.5)', 
-            padding: '20px', borderRadius: '24px', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)',
-            border: '1px solid rgba(255,255,255,0.1)'
-          }}>
+          <section style={{ background: theme === 'light' ? '#ffffff' : 'rgba(30,41,59,0.5)', padding: '20px', borderRadius: '24px', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)', border: '1px solid rgba(255,255,255,0.1)' }}>
             <div style={{ position: 'relative', overflow: 'hidden', borderRadius: '16px', background: theme==='light'?'#fff':'#0f172a' }}>
-              <canvas 
-                ref={canvasRef} width={700} height={500} 
-                onMouseMove={handleMouseMove} onMouseLeave={() => setHoverData(null)}
-                style={{ width: '100%', height: 'auto', display: 'block', cursor: 'crosshair' }} 
-              />
+              <canvas ref={canvasRef} width={700} height={500} onMouseMove={handleMouseMove} onMouseLeave={() => setHoverData(null)} style={{ width: '100%', height: 'auto', display: 'block', cursor: 'crosshair' }} />
               {hoverData && (
                 <>
                   <div style={{ position: 'absolute', left: hoverData[0].canvasX, top: 0, bottom: 0, width: '1px', background: '#3b82f6', opacity: 0.3 }} />
                   {hoverData.map((p, i) => (
-                    <div key={i} style={{
-                      position: 'absolute', left: p.canvasX + 10, top: p.canvasY - 20,
-                      background: p.color, color: 'white', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold'
-                    }}>
-                      {p.y}
-                    </div>
+                    <div key={i} style={{ position: 'absolute', left: p.canvasX + 10, top: p.canvasY - 20, background: p.color, color: 'white', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold' }}>{p.y}</div>
                   ))}
                 </>
               )}
@@ -188,101 +163,61 @@ export default function App() {
             <div style={{ marginTop: '20px', display: 'flex', height: '54px', borderRadius: '14px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
               <div style={{ flex: 1, display: 'flex', alignItems: 'center', background: theme==='light'?'#fff':'#1e293b', paddingLeft: '16px' }}>
                 <span style={{ color: '#94a3b8', fontWeight: 600 }}>f(x) =</span>
-                <input 
-                  value={input} onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleAddGraph()}
-                  style={{ flex: 1, padding: '10px', border: 'none', background: 'transparent', color: 'inherit', outline: 'none', fontSize: '16px' }}
-                />
+                <input value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleAddGraph()} style={{ flex: 1, padding: '10px', border: 'none', background: 'transparent', color: 'inherit', outline: 'none', fontSize: '16px' }} />
               </div>
-              <button onClick={handleAddGraph} style={{ 
-                background: '#3b82f6', color: '#fff', padding: '0 25px', border: 'none', 
-                cursor: 'pointer', fontWeight: 700, fontSize: '15px'
-              }}>
-                Побудувати
-              </button>
+              <button onClick={handleAddGraph} style={{ background: '#3b82f6', color: '#fff', padding: '0 25px', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '15px' }}>Побудувати</button>
             </div>
           </section>
 
           <aside style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <div style={{ background: theme==='light'?'#fff':'#1e293b', padding: '24px', borderRadius: '24px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
-              <h3 style={{ marginTop: 0, marginBottom: '20px', fontSize: '18px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Activity size={18} color="#3b82f6" /> Функції
-              </h3>
+              <h3 style={{ marginTop: 0, marginBottom: '20px', fontSize: '18px', display: 'flex', alignItems: 'center', gap: '8px' }}><Activity size={18} color="#3b82f6" /> Функції</h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', minHeight: '100px' }}>
                 {graphs.map((g) => (
-                  <div key={g.id} style={{ 
-                    padding: '12px', background: theme==='light'?'#f8fafc':'#0f172a', 
-                    borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    borderLeft: `4px solid ${g.color}` 
-                  }}>
+                  <div key={g.id} style={{ padding: '12px', background: theme==='light'?'#f8fafc':'#0f172a', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderLeft: `4px solid ${g.color}` }}>
                     <code style={{ fontWeight: 700, color: g.color }}>{g.formula}</code>
-                    <button 
-                      onClick={() => handleDeleteGraph(g.id)} 
-                      style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                    <button onClick={() => handleDeleteGraph(g.id)} style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', display: 'flex', alignItems: 'center' }}><Trash2 size={16} /></button>
                   </div>
                 ))}
               </div>
-              <button onClick={handleUndo} style={{ width: '100%', marginTop: '20px', padding: '12px', borderRadius: '12px', border: '1px solid #cbd5e1', background: 'transparent', color: '#64748b', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                <Undo2 size={16} /> Повернути
-              </button>
+              <button onClick={handleUndo} style={{ width: '100%', marginTop: '20px', padding: '12px', borderRadius: '12px', border: '1px solid #cbd5e1', background: 'transparent', color: '#64748b', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}><Undo2 size={16} /> Повернути</button>
             </div>
 
             <div style={{ padding: '20px', borderRadius: '24px', background: 'rgba(59,130,246,0.05)', border: '1px solid rgba(59,130,246,0.1)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#3b82f6', marginBottom: '8px' }}>
-                <MousePointer2 size={16} /> <span style={{ fontWeight: 700, fontSize: '14px' }}>Інтерактивність</span>
-              </div>
-              <p style={{ margin: 0, fontSize: '12px', color: '#64748b', lineHeight: '1.5' }}>
-                Наведіть на графік, щоб побачити координати. 
-              </p>
-            </div>
-
-            <div style={{ padding: '20px', borderRadius: '24px', background: 'rgba(59,130,246,0.05)', border: '1px solid rgba(59,130,246,0.1)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#3b82f6', marginBottom: '10px' }}>
-                <Activity size={16} /> <span style={{ fontWeight: 700, fontSize: '14px' }}>Benchmarking (Потоки)</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#3b82f6', marginBottom: '15px' }}>
+                <Activity size={16} /> <span style={{ fontWeight: 700, fontSize: '14px' }}>Аналіз даних (Потоки)</span>
               </div>
               
-              <button 
-                disabled={isBenchmarking}
-                onClick={async () => {
-                  setBenchmarkLogs([]); 
-                  setIsBenchmarking(true);
-                  toast('Бенчмарк запущено...');
-                  
-                  await runFullBenchmark((message) => {
-                    setBenchmarkLogs(prev => [...prev, message]);
-                  });
-                  
-                  setIsBenchmarking(false);
-                  toast.success('Бенчмарк завершено!');
-                }} 
-                style={{ 
-                  width: '100%', padding: '10px', borderRadius: '10px', 
-                  background: isBenchmarking ? '#94a3b8' : '#3b82f6', 
-                  color: '#fff', border: 'none', cursor: isBenchmarking ? 'wait' : 'pointer', 
-                  fontWeight: 'bold', marginBottom: '15px' 
-                }}>
-                {isBenchmarking ? '⏳ Обчислення...' : '🚀 Запустити тест'}
-              </button>
+              <div style={{ display: 'grid', gap: '8px', marginBottom: '15px', fontSize: '12px' }}>
+                <select value={benchConfig.taskType} onChange={e => setBenchConfig({...benchConfig, taskType: e.target.value})} style={{ padding: '8px', borderRadius: '8px', background: theme==='light'?'#fff':'#1e293b', color: 'inherit', border: '1px solid #cbd5e1' }}>
+                  <option value="minmax">Глобальний Min / Max</option>
+                  <option value="area">Площа під графіком</option>
+                  <option value="roots">Пошук коренів f(x)=0</option>
+                  <option value="extrema">Локальні екстремуми</option>
+                  <option value="intersections">Перетин функцій</option>
+                </select>
 
-              <div style={{ 
-                background: '#0f172a', color: '#10b981', padding: '12px', 
-                borderRadius: '12px', fontSize: '12px', fontFamily: 'monospace', 
-                minHeight: '100px', maxHeight: '250px', overflowY: 'auto',
-                boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.5)'
-              }}>
-                {benchmarkLogs.length === 0 ? (
-                  <span style={{ color: '#64748b' }}>// Результати з'являться тут...</span>
-                ) : (
-                  benchmarkLogs.map((log, index) => (
-                    <div key={index} style={{ marginBottom: '4px' }}>{log}</div>
-                  ))
+                <input type="text" placeholder="Формула 1" value={benchConfig.formula} onChange={e => setBenchConfig({...benchConfig, formula: e.target.value})} style={{ padding: '8px', borderRadius: '8px', border: '1px solid #cbd5e1', background: 'transparent', color: 'inherit', boxSizing: 'border-box' }} />
+                {benchConfig.taskType === 'intersections' && (
+                  <input type="text" placeholder="Формула 2" value={benchConfig.formula2} onChange={e => setBenchConfig({...benchConfig, formula2: e.target.value})} style={{ padding: '8px', borderRadius: '8px', border: '1px solid #cbd5e1', background: 'transparent', color: 'inherit', boxSizing: 'border-box' }} />
                 )}
+
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <input type="number" placeholder="Від" value={benchConfig.startX} onChange={e => setBenchConfig({...benchConfig, startX: Number(e.target.value)})} style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #cbd5e1', background: 'transparent', color: 'inherit', boxSizing: 'border-box' }} />
+                  <input type="number" placeholder="До" value={benchConfig.endX} onChange={e => setBenchConfig({...benchConfig, endX: Number(e.target.value)})} style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #cbd5e1', background: 'transparent', color: 'inherit', boxSizing: 'border-box' }} />
+                </div>
+                
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <div style={{flex: 1}}><input type="number" step="0.001" placeholder="Крок" value={benchConfig.step} onChange={e => setBenchConfig({...benchConfig, step: Number(e.target.value)})} style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #cbd5e1', background: 'transparent', color: 'inherit', boxSizing: 'border-box' }} title="Крок обчислень" /></div>
+                  <div style={{flex: 1}}><input type="number" placeholder="Потоки" value={benchConfig.threads} onChange={e => setBenchConfig({...benchConfig, threads: Number(e.target.value)})} style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #cbd5e1', background: 'transparent', color: 'inherit', boxSizing: 'border-box' }} title="Кількість потоків" /></div>
+                </div>
+              </div>
+
+              <button disabled={isBenchmarking} onClick={async () => { setBenchmarkLogs([]); setIsBenchmarking(true); toast('Обчислення...'); await runConfigurableBenchmark(benchConfig, (msg) => { setBenchmarkLogs(prev => [...prev, msg]); }); setIsBenchmarking(false); toast.success('Завершено!'); }} style={{ width: '100%', padding: '10px', borderRadius: '10px', background: isBenchmarking ? '#94a3b8' : '#3b82f6', color: '#fff', border: 'none', cursor: isBenchmarking ? 'wait' : 'pointer', fontWeight: 'bold', marginBottom: '15px' }}>{isBenchmarking ? '⏳ Рахую...' : '🚀 Запустити аналіз'}</button>
+              <div style={{ background: '#0f172a', color: '#10b981', padding: '12px', borderRadius: '12px', fontSize: '11px', fontFamily: 'monospace', height: '170px', overflowY: 'auto', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.5)' }}>
+                {benchmarkLogs.length === 0 ? <span style={{ color: '#64748b' }}>// Виберіть тип задачі та натисніть "Запустити"...</span> : benchmarkLogs.map((log, index) => <div key={index} style={{ marginBottom: '2px' }}>{log}</div>)}
               </div>
             </div>
-            
           </aside>
         </main>
       </div>

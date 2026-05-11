@@ -1,38 +1,68 @@
 import { SequentialEngine } from './core/math/engines/SequentialEngine.js';
 import { ParallelEngine } from './core/math/engines/ParallelEngine.js';
 
-export async function runFullBenchmark(logCallback) {
-  const log = (message) => {
-    console.log(message);
-    if (logCallback) logCallback(message);
-  };
+export async function runConfigurableBenchmark(config, logCallback) {
+  const log = (msg) => { console.log(msg); if (logCallback) logCallback(msg); };
 
-  const formula = 'sin(x) * cos(x^2) + x';
-  const steps = [0.01, 0.005]; 
-  const threadCounts = [2, 4]; 
+  const { taskType, formula, formula2, startX, endX, step, threads } = config;
+  const pointsCount = Math.round((endX - startX) / step);
 
-  log("===  ПОЧАТОК БЕНЧМАРКУ ===");
+  log(`\n=== 🚀 БЕНЧМАРК: ${taskType.toUpperCase()} ===`);
+  log(`F1: ${formula} ${taskType === 'intersections' ? ' | F2: ' + formula2 : ''}`);
+  log(`Діапазон: [${startX}, ${endX}], Крок: ${step}`);
+  log(`Очікується ітерацій: ~${pointsCount}`);
 
-  for (const step of steps) {
-    const pointsCount = Math.round(2000 / step);
-    log(`Розмір: ~${pointsCount} точок`);
-    
+  try {
+    log(`\n▶️ Однопоточний запуск...`);
     const seqEngine = new SequentialEngine();
     const startSeq = performance.now();
-    await seqEngine.calculatePoints(formula, -1000, 1000, step);
+    const resSeq = await seqEngine.runTask(taskType, formula, startX, endX, step, formula2);
     const timeSeq = performance.now() - startSeq;
-    log(`⏱️ Seq (1 потік): ${timeSeq.toFixed(2)} мс`);
+    log(`✅ Sequential: ${timeSeq.toFixed(2)} мс`);
 
-    for (const threads of threadCounts) {
-      const parEngine = new ParallelEngine(threads);
-      const startPar = performance.now();
-      await parEngine.calculatePoints(formula, -1000, 1000, step);
-      const timePar = performance.now() - startPar;
-      
-      const speedup = (timeSeq / timePar).toFixed(2);
-      log(`⏱️ Par (${threads} потоки): ${timePar.toFixed(2)} мс (Приск.: ${speedup}x)`);
+    log(`\n▶️ Мультипоточний (${threads} потоків)...`);
+    const parEngine = new ParallelEngine(threads);
+    const startPar = performance.now();
+    const resPar = await parEngine.runTask(taskType, formula, startX, endX, step, formula2);
+    const timePar = performance.now() - startPar;
+    log(`✅ Parallel: ${timePar.toFixed(2)} мс`);
+
+    const speedup = (timeSeq / timePar).toFixed(2);
+    log(`\n📊 ПРИСКОРЕННЯ: ${speedup}x`);
+
+    log(`\n--- РЕЗУЛЬТАТ ОБЧИСЛЕНЬ ---`);
+    if (taskType === 'area') {
+      log(`Площа: ~${resPar.toFixed(4)}`);
+    } 
+    else if (taskType === 'roots') {
+      log(`Знайдено коренів: ${resPar.length}`);
+      if (resPar.length > 0) {
+        const allRoots = resPar.map(r => r.toFixed(4)).join(';  ');
+        log(`Корені: x ∈ { ${allRoots} }`);
+      }
+    } 
+    else if (taskType === 'intersections') {
+      log(`Точок перетину: ${resPar.length}`);
+      if (resPar.length > 0) {
+        const allPoints = resPar.map(p => `(${p.x.toFixed(2)}, ${p.y.toFixed(2)})`).join(';  ');
+        log(`Точки: { ${allPoints} }`);
+      }
+    } 
+    else if (taskType === 'extrema') {
+      log(`Локальних MIN: ${resPar.min.length} | MAX: ${resPar.max.length}`);
+      if (resPar.min.length > 0 || resPar.max.length > 0) {
+        const minStr = resPar.min.map(p => `(${p.x.toFixed(2)}, ${p.y.toFixed(2)})`).join('; ');
+        const maxStr = resPar.max.map(p => `(${p.x.toFixed(2)}, ${p.y.toFixed(2)})`).join('; ');
+        log(`Мінімуми: ${minStr || 'немає'}`);
+        log(`Максимуми: ${maxStr || 'немає'}`);
+      }
+    } 
+    else if (taskType === 'minmax') {
+      log(`Глобальний MIN: ${resPar.min.toFixed(4)}`);
+      log(`Глобальний MAX: ${resPar.max.toFixed(4)}`);
     }
-    log("-------------------------");
+
+  } catch (err) {
+    log(`❌ Помилка: ${err.message}`);
   }
-  log("=== ✅ ЗАВЕРШЕНО ===");
 }
